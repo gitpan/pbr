@@ -1,0 +1,31 @@
+NAME
+    pbr - Perl-based Batch Rename
+
+SYNOPSIS
+    pbr [-c] [-d *dest_dir*] [-D] [-i] [-l] [-p] [-t] [-v] [-w]
+    PerlExpression Files ...
+
+    See below for description of the switches.
+
+DESCRIPTION
+    *pbr* is a perl-based batch renaming tool. Normally you wouldn't care
+    about the implementation language of a tool, but in this case proper
+    usage depends on your knowledge of perl.
+
+    The first argument to this program should be a perl expression that
+    modifies $_. The remaining arguments are files that will potentially be
+    renamed.
+
+    Each file name is temporarily placed in $_. The given expression is then
+    "eval"ed. Only if executing the expression results in the file name
+    being changed, is the file renamed accordingly.
+
+    For example, if one of your input file names is "foo.txt" and your
+    expression "s/o/O/g", the renamed file will be "fOO.txt".
+
+    On the command line, this would appear as:
+
+       pbr s/o/O/g foo.txt
+
+    If your input file above was "bar.txt", no change or rename would be
+    made.
