@@ -1,0 +1,4 @@
+compile.t
+pod.t
+prereq.t
+pbr.t

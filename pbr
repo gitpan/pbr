@@ -1,0 +1,252 @@
+#!/usr/bin/perl
+
+# $Id: pbr,v 1.7 2004/10/25 02:37:25 danboo Exp $
+
+use strict;
+use warnings;
+
+use File::Copy;
+use File::Spec;
+use File::Path;
+use Getopt::Std;
+
+our $VERSION = 0.1;
+
+our ($opt_c, $opt_d, $opt_D, $opt_i, $opt_t, $opt_v, $opt_w);
+
+getopts('cd:Ditvw') && @ARGV > 1 || die usage(), "\n";
+
+$opt_v = 1 if $opt_t;
+
+my $code = shift;
+
+for my $old_file (@ARGV)
+   {
+
+   ## skip directories and other irregular files
+   next unless -f $old_file;
+
+   ## get the file's base name and path
+   my (undef, $old_path, $old_base) = File::Spec->splitpath($old_file);
+
+   ## determine the name to modify with the given expression
+   my $old_name = $opt_w ? $old_file : $old_base;
+
+   ## copy the old name to $_
+   local $_ = $old_name;
+
+   ## eval the expression
+   eval $code;
+
+   ## die if the expression caused an error
+   $@ && die $@;
+
+   ## record the new name
+   my $new_name = $_;
+
+   my (undef, $new_path, $new_base) = File::Spec->splitpath($new_name);
+
+   ## determine if the expression modified the file name
+   my $modified = $opt_w ? ( $old_file ne $new_name )
+                         : ( $old_base ne $new_base );
+
+   if ($modified)
+      {
+
+      ## construct the new file path
+      my $new_file = $opt_d ? File::Spec->catpath(undef, $opt_d, $new_base) :
+                     $opt_w ? $new_name                                     :
+                              File::Spec->catpath(undef, $old_path, $new_base) ;
+
+      ## determine the command to use
+      my $command = $opt_c ? 'copy' : 'move';
+
+      ## print diagnostics
+      print "$command: $old_file => $new_file" if $opt_v;
+
+      if ($opt_i)
+         {
+         ## get user's confirmation
+         print ": confirm? [yN]: ";
+         my $answer = <STDIN>;
+         next unless $answer =~ /\A\s*y(?:es)?\s*\z/i;
+         warn;
+         }
+      elsif ($opt_v)
+         {
+         print "\n";
+         }
+
+      unless ($opt_t)
+         {
+
+         if ($opt_D)
+            {
+            ## use the user specified directory
+            my (undef, $new_path, $new_base) = File::Spec->splitpath($new_file);
+            if (defined $new_path && length $new_path)
+               {
+               -e $new_path || mkpath($new_path, $opt_v ? 1 : 0);
+               }
+            }
+
+         no strict 'refs';
+
+         ## execute the command
+         my $r = eval { &$command($old_file, $new_file) };
+
+         ## die if the command had an exception
+         $@ && die "failure to $command file: $old_name => $new_name\n$@";
+
+         ## die if the return value was false
+         $r || die "failure to $command file: $old_name => $new_name\n$!";
+
+         }
+
+      }
+
+   }
+
+sub usage
+   {
+   "pbr [-c] [-d destination_directory] [-D] [-i] [-t] [-v] [-w] PerlExpression Files ...";
+   }
+
+__END__
+
+=head1 NAME
+
+pbr - Perl-based Batch Rename
+
+=head1 SYNOPSIS
+
+B<pbr> [B<-c>] [B<-d I<destination_directory>>] [B<-D>] [B<-i>] [B<-t>]
+[B<-v>] [B<-w>] PerlExpression Files ...
+
+See below for description of the switches.
+
+=head1 DESCRIPTION
+
+I<pbr> is a perl-based batch renaming tool. Normally you wouldn't care
+about the implementation language of a tool, but in this case proper usage
+depends on your knowledge of perl.
+
+The first argument to this program should be a perl expression that modifies
+C<$_>. The remaining arguments are files that will potentially be renamed.
+
+Each file name is temporarily placed in C<$_>. The given expression is then
+C<eval>ed. Only if executing the expression results in the file name being
+changed, is the file renamed accordingly.
+
+For example, if one of your input file names is C<foo.txt> and your expression
+C<s/o/O/g>, the renamed file will be C<fOO.txt>.
+
+On the command line, this would appear as:
+
+   pbr s/o/O/g foo.txt
+
+If your input file above was C<bar.txt>, no change or rename would be made.
+
+=head1 OPTIONS
+
+=over 5
+
+=item B<-c>
+
+Perform a copy instead of a rename.
+
+=item B<-d destination_directory>
+
+The destination for a renamed file will be the modified file's base name
+prepended with the given destination directory.
+
+Example:
+
+   pbr -vd new_dir/ s/o/O/g foo.txt
+   move: foo.txt => new_dir/fOO.txt
+
+=item B<-D>
+
+Create directories if necessary.
+
+=item B<-i>
+
+Prompt the user for confirmation prior to performing the rename (interactive
+mode).
+
+=item B<-t>
+
+No renames will be performed (test mode). Implies C<-v>.
+
+=item B<-v>
+
+Print diagnostic information concerning the renaming of files.
+
+=item B<-w>
+
+Store the whole path and file into C<$_>. By default only the base name is put
+in C<$_>. This allows your expression to see and modify the path.
+
+Example:
+
+   pbr -vw s/o/O/g foo/foo.txt
+   move: foo/foo.txt => fOO/fOO.txt
+
+Without the C<-w> the above the expression would only operate on the base name
+of the file, resulting in the modified file name being 'foo/fOO.txt'.
+
+=head1 EXAMPLES
+
+=over 5
+
+=item B<o>
+
+Upper-case base name with substitution.
+
+   pbr -v 's/(.)/\U$1/g' dir/abc123.txt
+   move: dir/abc123.txt => dir/ABC123.TXT
+
+=item B<o>
+
+Upper-case (ASCII-only) base name with transliteration.
+
+   pbr -v tr/a-z/A-Z/ dir/abc123.txt
+   move: dir/abc123.txt => dir/ABC123.TXT
+
+=item B<o>
+
+Upper-case base name with assignment, move to specified directory.
+
+   pbr -vd new_dir '$_ = uc' dir/abc123.txt
+   move: dir/abc123.txt => new_dir/ABC123.TXT
+
+=item B<o>
+
+Upper-case path and base name with assignment, create directory if necessary.
+
+   pbr -vwD '$_ = uc' dir/abc123.txt
+   move: dir/abc123.txt => DIR/ABC123.TXT
+
+=item B<o>
+
+Replace directory separators with underscores.
+
+   pbr -vw 'tr/\//_/d' dir/abc123.txt
+   move: dir/abc123.txt => dir_abc123.txt
+
+=head1 TODO
+
+=over 5
+
+=item B<o>
+
+Create a plugin system where C<-p> indicates the expression is replaced by a
+plugin name. The plugin name would be looked up in $HOME/.pbr_plugin/ or
+/etc/pbr_plugin. The plugin would be C<require>d and a sub with the same name
+would be called for each file.
+
+=head1 AUTHOR
+
+Daniel B. Boorstein <danboo@cpan.org>
+
+=cut
