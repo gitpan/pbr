@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: pbr,v 1.16 2004/10/27 02:45:40 danboo Exp $
+# $Id: pbr,v 1.19 2004/10/27 10:51:20 danboo Exp $
 
 use strict;
 use warnings;
@@ -12,7 +12,7 @@ use Getopt::Std;
 
 use constant GLOBAL_PLUGIN_DIR => '/usr/share/pbr/plugins';
 
-our $VERSION = 0.11;
+our $VERSION = 0.12;
 
 our ($opt_c, $opt_d, $opt_D, $opt_i, $opt_l, $opt_p, $opt_t, $opt_v, $opt_w);
 
@@ -250,7 +250,7 @@ Create directories if necessary.
 Prompt the user for confirmation prior to performing the rename (interactive
 mode).
 
-=item B<-p>
+=item B<-l>
 
 List available plugins and exit.
 
@@ -347,7 +347,7 @@ them and then exit. If the first line of a plugin is a comment, the remainder
 of the line will be included in the list output as a comment about that
 particular plugin.
 
-If neither is found C<pbr> dies with a message.
+If no plugin is found C<pbr> dies with a message.
 
 =head1 TODO
 

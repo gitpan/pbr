@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.3 2004/10/26 02:22:24 danboo Exp $
+# $Id: Makefile.PL,v 1.4 2004/10/27 03:03:21 danboo Exp $
 use ExtUtils::MakeMaker;
 
 eval "use Test::Manifest";
@@ -21,7 +21,7 @@ my $script_name = "pbr";
 
 WriteMakefile(
 		'NAME'      => $script_name,
-        'VERSION'   => '0.11',
+        'VERSION'   => '0.12',
 
 		'EXE_FILES' =>  [ $script_name ],
             

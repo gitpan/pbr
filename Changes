@@ -1,4 +1,7 @@
-# $Id: Changes,v 1.3 2004/10/27 02:50:41 danboo Exp $
+# $Id: Changes,v 1.4 2004/10/28 02:23:26 danboo Exp $
+0.12 - Wed Oct 27 10:22:29 2004
+	+ various documentation fixes
+
 0.11 - Tue Oct 26 10:50:05 2004
 	+ added support for accessing and listing plugins (reusable-persistent renaming routines)
    + modified one example to be more sensible
